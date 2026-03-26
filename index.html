@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transporte SD – Demo (Tiles externos provisionales)</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#111827; --card:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --brand:#22d3ee; --accent:#a78bfa; --good:#34d399; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    html, body { height: 100%; }
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial; background:var(--bg); color:var(--text);}
+    #app{display:grid; grid-template-columns:340px 1fr; height:100vh;}
+    aside{background:var(--panel); border-right:1px solid #374151; overflow:auto}
+    header{padding:12px 14px; border-bottom:1px solid #374151; display:flex; align-items:center; gap:8px}
+    header h1{font-size:16px; margin:0; font-weight:600}
+    header .badge{font-size:12px; color:#111; background:var(--brand); padding:2px 6px; border-radius:999px}
+    .section{padding:12px 14px; border-bottom:1px solid #374151}
+    .section h2{margin:0 0 8px; font-size:14px; color:var(--muted); font-weight:600}
+    .row{display:flex; gap:8px; margin:6px 0}
+    input[type="text"], select{flex:1; background:var(--card); border:1px solid #374151; color:var(--text); padding:8px 10px; border-radius:10px}
+    .btn{background:linear-gradient(135deg, var(--brand), var(--accent)); color:#111; border:0; padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:700}
+    .btn.secondary{background:#374151; color:var(--text);}
+    .pill{display:inline-flex; align-items:center; gap:6px; background:#0b1220; border:1px solid #263042; padding:4px 8px; border-radius:999px; font-size:12px}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+    .small{font-size:12px; color:var(--muted)}
+    .legend{display:flex; flex-wrap:wrap; gap:6px}
+    .legend .item{display:flex; align-items:center; gap:6px; font-size:12px}
+    .dot{width:10px; height:10px; border-radius:999px}
+
+    #mapWrap{position:relative;}
+    canvas{position:absolute; inset:0; display:block; width:100%; height:100%; background:#0b0f1a; cursor:grab}
+    canvas.dragging{cursor:grabbing}
+    #hud{position:absolute; left:8px; bottom:8px; display:flex; gap:8px; z-index:3}
+    #hud .card{background:rgba(17,24,39,.9); border:1px solid #374151; padding:8px 10px; border-radius:12px}
+    #attrib{position:absolute; right:8px; bottom:8px; z-index:3; background:rgba(17,24,39,.9); border:1px solid #374151; padding:6px 8px; border-radius:8px; font-size:11px; color:#9ca3af}
+    #attrib a{color:#9ca3af}
+
+    .route-card{background:var(--card); border:1px solid #374151; padding:10px; border-radius:12px; margin-top:8px}
+    .route-card h3{margin:0 0 4px; font-size:14px}
+    .route-card .meta{font-size:12px; color:var(--muted)}
+    .steps{margin-top:6px;}
+    .step{display:flex; gap:8px; align-items:center; padding:6px 0; border-bottom:1px dashed #374151}
+    .step:last-child{border-bottom:0}
+    .mode{font-weight:700; font-size:12px}
+    .time{color:var(--good)}
+    .cost{color:var(--warn)}
+    .sep{height:1px; background:#374151; margin:8px 0}
+
+    details summary{cursor:pointer}
+  </style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <header>
+      <h1>Transporte SD</h1>
+      <span class="badge">Tiles externos</span>
+    </header>
+
+    <div class="section">
+      <h2>Origen y destino</h2>
+      <div class="row"><input id="originInput" type="text" placeholder="Origen (clic en el mapa o busca)…" list="searchList"/></div>
+      <div class="row"><input id="destInput" type="text" placeholder="Destino (clic en el mapa o busca)…" list="searchList"/></div>
+      <datalist id="searchList"></datalist>
+      <div class="row"><button id="btnRoute" class="btn">Calcular ruta</button><button id="btnReset" class="btn secondary">Limpiar</button></div>
+    </div>
+
+    <div class="section">
+      <h2>Modos</h2>
+      <div class="legend">
+        <span class="item"><span class="dot" style="background:#60a5fa"></span>Guagua</span>
+        <span class="item"><span class="dot" style="background:#34d399"></span>Concho</span>
+        <span class="item"><span class="dot" style="background:#f472b6"></span>Carro público</span>
+        <span class="item"><span class="dot" style="background:#fbbf24"></span>Motoconcho</span>
+      </div>
+      <div class="grid" style="margin-top:8px">
+        <label class="pill"><input type="checkbox" id="mode_guagua" checked> Guagua</label>
+        <label class="pill"><input type="checkbox" id="mode_concho" checked> Concho</label>
+        <label class="pill"><input type="checkbox" id="mode_carro_publico" checked> Carro público</label>
+        <label class="pill"><input type="checkbox" id="mode_motoconcho" checked> Motoconcho</label>
+      </div>
+      <details style="margin-top:8px">
+        <summary>Parámetros (tiempos y costos)</summary>
+        <div id="paramForm" class="small"></div>
+      </details>
+    </div>
+
+    <div class="section">
+      <h2>Datos</h2>
+      <div class="row">
+        <button id="btnLoadNetwork" class="btn secondary">Cargar network.json</button>
+        <input id="fileNetwork" type="file" accept="application/json" hidden>
+      </div>
+      <div class="row">
+        <button id="btnLoadPOI" class="btn secondary">Cargar pois.json</button>
+        <input id="filePOI" type="file" accept="application/json" hidden>
+      </div>
+      <div class="small">Si sirves la página (GitHub Pages), la app intentará cargar <code>./data/network.json</code> y <code>./data/pois.json</code>. Si no existen, usa los datos embebidos.</div>
+    </div>
+
+    <div class="section" id="routesPanel">
+      <h2>Rutas sugeridas</h2>
+      <div id="routesList" class="small">Calcula una ruta para ver alternativas…</div>
+    </div>
+
+    <div class="section small">
+      <h2>Exportar</h2>
+      <button id="btnExportGeoJSON" class="btn secondary">Descargar ruta (GeoJSON)</button>
+    </div>
+  </aside>
+  <div id="mapWrap">
+    <canvas id="map"></canvas>
+    <div id="hud"><div class="card" id="hudInfo">Cargando…</div></div>
+    <div id="attrib">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+  </div>
+</div>
+
+<script id="default-network" type="application/json">{"meta": {"name": "Red de Transporte SD (demo)", "crs": "WGS84", "version": 1}, "modes": {"concho": {"speed_kmh": 25, "fare_per_km": 20, "currency": "DOP", "transfer_penalty_min": 4, "avg_headway_min": 5}, "guagua": {"speed_kmh": 18, "fare_per_km": 15, "currency": "DOP", "transfer_penalty_min": 5, "avg_headway_min": 8}, "carro_publico": {"speed_kmh": 22, "fare_per_km": 20, "currency": "DOP", "transfer_penalty_min": 4, "avg_headway_min": 6}, "motoconcho": {"speed_kmh": 28, "fare_per_km": 30, "currency": "DOP", "transfer_penalty_min": 1, "avg_headway_min": 2}}, "nodes": [{"id": "colonial", "name": "Zona Colonial", "lat": 18.473, "lon": -69.886}, {"id": "gazcue", "name": "Gazcue", "lat": 18.47, "lon": -69.9}, {"id": "villa_juana", "name": "Villa Juana", "lat": 18.488, "lon": -69.915}, {"id": "piantini", "name": "Piantini", "lat": 18.468, "lon": -69.936}, {"id": "churchill_27", "name": "Av. Churchill x 27 de Febrero", "lat": 18.472, "lon": -69.94}, {"id": "nunez", "name": "N\u00fa\u00f1ez de C\u00e1ceres", "lat": 18.473, "lon": -69.962}, {"id": "luperon_27", "name": "Av. Luper\u00f3n x 27 de Febrero", "lat": 18.468, "lon": -69.974}, {"id": "mirador", "name": "Parque Mirador Sur", "lat": 18.446, "lon": -69.965}], "edges": [{"id": "e1", "from": "colonial", "to": "gazcue", "modes": ["carro_publico", "concho", "motoconcho"], "distance_m": 1600, "name": "C. El Conde / Av. Independencia", "headway_min": {"carro_publico": 6, "concho": 5}}, {"id": "e2", "from": "gazcue", "to": "villa_juana", "modes": ["carro_publico", "guagua", "motoconcho"], "distance_m": 2300, "name": "Av. M\u00e1ximo G\u00f3mez", "headway_min": {"guagua": 8, "carro_publico": 6}}, {"id": "e3", "from": "villa_juana", "to": "churchill_27", "modes": ["guagua", "concho", "motoconcho"], "distance_m": 2500, "name": "Av. 27 de Febrero (tramo este)", "headway_min": {"guagua": 8}}, {"id": "e4", "from": "churchill_27", "to": "piantini", "modes": ["carro_publico", "concho", "motoconcho"], "distance_m": 1200, "name": "Av. Winston Churchill", "headway_min": {"carro_publico": 6}}, {"id": "e5", "from": "churchill_27", "to": "nunez", "modes": ["guagua", "carro_publico", "motoconcho"], "distance_m": 2200, "name": "Av. 27 de Febrero (tramo oeste)", "headway_min": {"guagua": 8}}, {"id": "e6", "from": "nunez", "to": "luperon_27", "modes": ["guagua", "carro_publico", "motoconcho"], "distance_m": 1800, "name": "Av. 27 de Febrero (tramo oeste)", "headway_min": {"guagua": 8}}, {"id": "e7", "from": "luperon_27", "to": "mirador", "modes": ["concho", "motoconcho"], "distance_m": 2300, "name": "Av. Luper\u00f3n / Mirador Sur"}, {"id": "e8", "from": "gazcue", "to": "piantini", "modes": ["carro_publico", "motoconcho"], "distance_m": 3000, "name": "Av. Bol\u00edvar \u2192 Av. Abraham Lincoln"}, {"id": "e9", "from": "piantini", "to": "mirador", "modes": ["concho", "motoconcho"], "distance_m": 2600, "name": "Av. N\u00fa\u00f1ez de C\u00e1ceres (sur)"}], "stops": [{"id": "st_colonial_01", "node": "colonial", "name": "Parada Parque Col\u00f3n"}, {"id": "st_gazcue_01", "node": "gazcue", "name": "Parada Independencia"}, {"id": "st_vj_01", "node": "villa_juana", "name": "Parada M\u00e1ximo G\u00f3mez"}, {"id": "st_ch_27_01", "node": "churchill_27", "name": "Parada Churchill"}, {"id": "st_piantini_01", "node": "piantini", "name": "Parada Piantini"}, {"id": "st_nunez_01", "node": "nunez", "name": "Parada N\u00fa\u00f1ez"}, {"id": "st_lup_27_01", "node": "luperon_27", "name": "Parada Luper\u00f3n"}, {"id": "st_mirador_01", "node": "mirador", "name": "Parada Mirador Sur"}]}</script>
+<script id="default-pois" type="application/json">{"meta": {"name": "POIs SD (demo)", "crs": "WGS84", "version": 1}, "places": [{"id": "poi_catedral", "name": "Catedral Primada", "lat": 18.4724, "lon": -69.8829}, {"id": "poi_malecon", "name": "Malec\u00f3n de Santo Domingo", "lat": 18.4607, "lon": -69.9111}, {"id": "poi_agora", "name": "Agora Mall", "lat": 18.4863, "lon": -69.9361}, {"id": "poi_blue_mall", "name": "BlueMall", "lat": 18.4707, "lon": -69.9409}, {"id": "poi_mirador_sur", "name": "Parque Mirador Sur (Centro)", "lat": 18.4479, "lon": -69.9672}]}</script>
+<script>
+// === Error HUD ===
+(function(){ const hud=()=>document.getElementById('hudInfo'); window.addEventListener('error',e=>{ if(hud()) hud().textContent='Error: '+(e.message||e.error)}); window.addEventListener('unhandledrejection',e=>{ if(hud()) hud().textContent='Error (promesa): '+(e.reason&&e.reason.message?e.reason.message:e.reason)});})();
+
+// === Proyección / estado ===
+const R=6378137; const lon2x=lon=>R*(lon*Math.PI/180); const lat2y=lat=>{const s=Math.sin(lat*Math.PI/180); return R*Math.log((1+s)/(1-s))/2}; const x2lon=x=>(x/R)*(180/Math.PI); const y2lat=y=>(2*Math.atan(Math.exp(y/R))-Math.PI/2)*(180/Math.PI);
+const state={ network:null, pois:null, nodesById:new Map(), edgesByNode:new Map(), stopsByNode:new Map(), canvas:null, ctx:null, width:0, height:0, center:{lat:18.472, lon:-69.94}, zoom:14, origin:null, destination:null, routes:[], selectedRouteIdx:0, colors:{guagua:'#60a5fa', concho:'#34d399', carro_publico:'#f472b6', motoconcho:'#fbbf24'} };
+const metersPerPixel=(lat,zoom)=> Math.cos(lat*Math.PI/180)*2*Math.PI*R/(256*Math.pow(2,zoom));
+
+function worldToScreen(lat,lon){ const cx=lon2x(state.center.lon), cy=lat2y(state.center.lat); const x=lon2x(lon), y=lat2y(lat); const mpp=metersPerPixel(state.center.lat,state.zoom); return {x:state.width/2+(x-cx)/mpp, y:state.height/2+(y-cy)/mpp}; }
+function screenToWorld(xp,yp){ const cx=lon2x(state.center.lon), cy=lat2y(state.center.lat); const mpp=metersPerPixel(state.center.lat,state.zoom); const x=cx+(xp-state.width/2)*mpp; const y=cy+(yp-state.height/2)*mpp; return {lat:y2lat(y), lon:x2lon(x)}; }
+
+async function tryFetchLocal(){ try{ const [net, poi]=await Promise.all([ fetch('./data/network.json').then(r=>r.ok?r.json():Promise.reject('no-net')), fetch('./data/pois.json').then(r=>r.ok?r.json():Promise.reject('no-poi')) ]); return {net, poi}; }catch(e){ return null; } }
+function loadDefaults(){ return {net: JSON.parse(document.getElementById('default-network').textContent), poi: JSON.parse(document.getElementById('default-pois').textContent)}; }
+function indexData(){ state.nodesById.clear(); state.edgesByNode.clear(); state.stopsByNode.clear(); for(const n of state.network.nodes){ state.nodesById.set(n.id,n);} for(const e of state.network.edges){ if(!state.edgesByNode.has(e.from)) state.edgesByNode.set(e.from,[]); if(!state.edgesByNode.has(e.to)) state.edgesByNode.set(e.to,[]); state.edgesByNode.get(e.from).push({...e,dir:+1}); state.edgesByNode.get(e.to).push({...e,dir:-1}); } for(const s of state.network.stops||[]){ if(!state.stopsByNode.has(s.node)) state.stopsByNode.set(s.node,[]); state.stopsByNode.get(s.node).push(s); } buildSearchIndex(); }
+
+let searchItems=[]; function buildSearchIndex(){ searchItems=[]; for(const n of state.network.nodes){ searchItems.push({type:'nodo',id:n.id,name:n.name,lat:n.lat,lon:n.lon}); } for(const s of state.network.stops||[]){ const n=state.nodesById.get(s.node); searchItems.push({type:'parada',id:s.id,name:s.name,lat:n.lat,lon:n.lon}); } for(const p of state.pois.places||[]){ searchItems.push({type:'poi',id:p.id,name:p.name,lat:p.lat,lon:p.lon}); } document.getElementById('searchList').innerHTML=searchItems.map(it=>`<option value="${it.name}"></option>`).join(''); }
+const findByName=q=>{ q=q.trim().toLowerCase(); return searchItems.find(it=>it.name.toLowerCase()===q)||null; };
+
+function renderParamForm(){ const wrap=document.getElementById('paramForm'); const m=state.network.modes; wrap.innerHTML=Object.keys(m).map(k=>{ const v=m[k]; return `<div class="row"><div style="flex:1"><div><b>${k}</b></div><div class="small">Velocidad (km/h)</div><input type="range" min="8" max="60" step="1" value="${v.speed_kmh}" id="speed_${k}"> <span id="speedv_${k}">${v.speed_kmh}</span><div class="small">Tarifa por km (DOP)</div><input type="range" min="5" max="60" step="1" value="${v.fare_per_km}" id="fare_${k}"> <span id="farev_${k}">${v.fare_per_km}</span><div class="small">Penalidad de transbordo (min)</div><input type="range" min="0" max="15" step="1" value="${v.transfer_penalty_min||0}" id="pen_${k}"> <span id="penv_${k}">${v.transfer_penalty_min||0}</span></div></div>`; }).join(''); for(const k of Object.keys(m)){ const upd=()=>{ m[k].speed_kmh=+document.getElementById('speed_'+k).value; m[k].fare_per_km=+document.getElementById('fare_'+k).value; m[k].transfer_penalty_min=+document.getElementById('pen_'+k).value; document.getElementById('speedv_'+k).textContent=m[k].speed_kmh; document.getElementById('farev_'+k).textContent=m[k].fare_per_km; document.getElementById('penv_'+k).textContent=m[k].transfer_penalty_min; redraw(); }; ['speed_','fare_','pen_'].forEach(p=> document.getElementById(p+k).addEventListener('input', upd)); } }
+
+function resize(){ const c=state.canvas; const dpr=window.devicePixelRatio||1; const wrap=document.getElementById('mapWrap'); c.style.height = wrap.clientHeight ? wrap.clientHeight+'px' : '100vh'; state.width=c.clientWidth; state.height=c.clientHeight; c.width=Math.max(1,Math.floor(state.width*dpr)); c.height=Math.max(1,Math.floor(state.height*dpr)); state.ctx.setTransform(dpr,0,0,dpr,0,0); redraw(); }
+
+function drawGrid(){ const ctx=state.ctx; ctx.save(); ctx.globalAlpha=0.2; ctx.strokeStyle='#111827'; for(let x=0;x<state.width;x+=128){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,state.height); ctx.stroke(); } for(let y=0;y<state.height;y+=128){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(state.width,y); ctx.stroke(); } ctx.restore(); }
+
+function drawNetwork(){ const ctx=state.ctx; for(const e of state.network.edges){ const a=state.nodesById.get(e.from), b=state.nodesById.get(e.to); const A=worldToScreen(a.lat,a.lon), B=worldToScreen(b.lat,b.lon); ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.lineWidth=3; ctx.strokeStyle='#93a2b114'; ctx.stroke(); } for(const s of state.network.stops||[]){ const n=state.nodesById.get(s.node); const P=worldToScreen(n.lat,n.lon); ctx.fillStyle='#e5e7eb'; ctx.beginPath(); ctx.arc(P.x,P.y,2.5,0,Math.PI*2); ctx.fill(); } if(state.origin){ const P=worldToScreen(state.origin.lat,state.origin.lon); ctx.fillStyle='#22d3ee'; ctx.beginPath(); ctx.arc(P.x,P.y,7,0,Math.PI*2); ctx.fill(); } if(state.destination){ const P=worldToScreen(state.destination.lat,state.destination.lon); ctx.fillStyle='#a78bfa'; ctx.beginPath(); ctx.arc(P.x,P.y,7,0,Math.PI*2); ctx.fill(); } }
+
+function drawRoute(route,highlight=false){ const ctx=state.ctx; ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round'; for(const seg of route.segments){ const a=state.nodesById.get(seg.from), b=state.nodesById.get(seg.to); const A=worldToScreen(a.lat,a.lon), B=worldToScreen(b.lat,b.lon); ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.lineWidth=highlight?6:4; ctx.strokeStyle='#111827'; ctx.stroke(); ctx.lineWidth=highlight?4:3; ctx.strokeStyle=state.colors[seg.mode]||'#fff'; ctx.stroke(); } ctx.restore(); }
+
+// ===== Tiles (OSM) =====
+const TILE_SIZE=256; const tileCache=new Map();
+function lonlatToGlobalPx(lon,lat,zoom){ const z=Math.pow(2,zoom); const x=(lon+180)/360*z*TILE_SIZE; const s=Math.sin(lat*Math.PI/180); const y=(0.5 - Math.log((1+s)/(1-s))/(4*Math.PI))*z*TILE_SIZE; return {x,y}; }
+function getTile(src){ return new Promise((resolve,reject)=>{ if(tileCache.has(src)) return resolve(tileCache.get(src)); const img=new Image(); img.crossOrigin='anonymous'; img.onload=()=>{ tileCache.set(src,img); resolve(img); }; img.onerror=reject; img.src=src; }); }
+async function drawTiles(ctx){ const z=Math.round(state.zoom); const centerPx=lonlatToGlobalPx(state.center.lon,state.center.lat,z); const topLeftGlobalX=centerPx.x - state.width/2; const topLeftGlobalY=centerPx.y - state.height/2; const startX=Math.floor(topLeftGlobalX / TILE_SIZE); const startY=Math.floor(topLeftGlobalY / TILE_SIZE); const endX=Math.floor((topLeftGlobalX+state.width)/TILE_SIZE); const endY=Math.floor((topLeftGlobalY+state.height)/TILE_SIZE); const wrap = Math.pow(2,z);
+  const urlFor=(x,y,z)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+  const tasks=[]; for(let ty=startY; ty<=endY; ty++){ for(let tx=startX; tx<=endX; tx++){ const x=((tx%wrap)+wrap)%wrap; const y=ty; if(y<0||y>=wrap) continue; const src=urlFor(x,y,z); const px=tx*TILE_SIZE - topLeftGlobalX; const py=ty*TILE_SIZE - topLeftGlobalY; tasks.push(getTile(src).then(img=> ctx.drawImage(img, px, py, TILE_SIZE, TILE_SIZE)).catch(()=>{})); } } await Promise.all(tasks); }
+
+// Hacemos redraw async para esperar tiles
+async function redraw(){ if(!state.ctx) return; const ctx=state.ctx; ctx.clearRect(0,0,state.width,state.height); await drawTiles(ctx); // base
+ //drawGrid(); // opcional
+ drawNetwork(); if(state.routes.length){ state.routes.forEach((r,i)=> drawRoute(r,i===state.selectedRouteIdx)); } }
+
+// ===== Interacción =====
+let dragging=false,lastX=0,lastY=0; function onWheel(ev){ ev.preventDefault(); const delta=Math.sign(ev.deltaY); const before=screenToWorld(ev.offsetX,ev.offsetY); state.zoom=Math.min(19,Math.max(2,state.zoom - delta*0.25)); const after=screenToWorld(ev.offsetX,ev.offsetY); state.center.lat += before.lat - after.lat; state.center.lon += before.lon - after.lon; redraw(); }
+function onMouseDown(ev){ dragging=true; lastX=ev.clientX; lastY=ev.clientY; state.canvas.classList.add('dragging'); }
+function onMouseMove(ev){ if(!dragging) return; const dx=ev.clientX-lastX, dy=ev.clientY-lastY; lastX=ev.clientX; lastY=ev.clientY; const a=screenToWorld(0,0), b=screenToWorld(dx,dy); state.center.lat -= (b.lat-a.lat); state.center.lon -= (b.lon-a.lon); redraw(); }
+function onMouseUp(){ dragging=false; state.canvas.classList.remove('dragging'); }
+function onDblClick(ev){ const w=screenToWorld(ev.offsetX,ev.offsetY); if(!state.origin){ state.origin=w; updateInputsFromState(); } else if(!state.destination){ state.destination=w; updateInputsFromState(); } else { state.origin=w; state.destination=null; } redraw(); }
+function updateInputsFromState(){ const oi=document.getElementById('originInput'); const di=document.getElementById('destInput'); if(state.origin) oi.value=`${state.origin.lat.toFixed(5)}, ${state.origin.lon.toFixed(5)}`; if(state.destination) di.value=`${state.destination.lat.toFixed(5)}, ${state.destination.lon.toFixed(5)}`; }
+
+// ===== Routing =====
+const haversine=(a,b)=>{ const toRad=d=>d*Math.PI/180; const Rm=6371000; const dLat=toRad(b.lat-a.lat), dLon=toRad(b.lon-a.lon); const s1=Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLon/2)**2; return 2*Rm*Math.asin(Math.sqrt(s1)); };
+function nearestNode(p){ let best=null,bestD=Infinity; for(const n of state.network.nodes){ const d=haversine(p,n); if(d<bestD){bestD=d;best=n;} } return {node:best, distance:bestD}; }
+function buildGraph(allowed){ const adj=new Map(); for(const n of state.network.nodes){ adj.set(n.id,[]);} for(const e of state.network.edges){ const modes=e.modes.filter(m=>allowed.has(m)); if(!modes.length) continue; const a=e.from, b=e.to; adj.get(a).push({to:b, edge:e, modes}); adj.get(b).push({to:a, edge:e, modes}); } return adj; }
+function routeDijkstra(startId,endId,adj){ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj.keys()){ dist.set(n,Infinity);} dist.set(startId,0); const pq=[{n:startId,d:0}]; const modesCfg=state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===endId) break; for(const arc of adj.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modesCfg[mode]?.speed_kmh||20)/3.6; const tEdge=e.distance_m/speed; const wait=(e.headway_min?.[mode] ?? modesCfg[mode]?.avg_headway_min ?? 0)*60; const trans=(prevMode.get(u)&&prevMode.get(u)!==mode)? (modesCfg[mode]?.transfer_penalty_min||0)*60:0; const w=tEdge + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(endId)) return null; const segments=[]; let cur=endId; let totalTime=0,totalCost=0; while(cur!==startId){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segments.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); const sp=(modesCfg[mode]?.speed_kmh||20)/3.6; totalTime+=edge.distance_m/sp; totalCost+=(modesCfg[mode]?.fare_per_km||20)*(edge.distance_m/1000); cur=u; } segments.reverse(); return {segments,totalTime_s:totalTime,totalCost:totalCost}; }
+function computeRoutes(){ if(!state.origin||!state.destination) return []; const o=nearestNode(state.origin), d=nearestNode(state.destination); const allowed=new Set([ document.getElementById('mode_guagua').checked ? 'guagua': null, document.getElementById('mode_concho').checked ? 'concho': null, document.getElementById('mode_carro_publico').checked ? 'carro_publico': null, document.getElementById('mode_motoconcho').checked ? 'motoconcho': null ].filter(Boolean)); if(!allowed.size) return []; const adj=buildGraph(allowed); const r1=routeDijkstra(o.node.id, d.node.id, adj); if(!r1) return []; r1.label='Más rápida'; const penalty=new Set(r1.segments.map(s=>s.edgeId)); const adj2=new Map(); for(const [u,list] of adj.entries()){ adj2.set(u, list.map(x=> ({...x, pen: penalty.has(x.edge.id) ? 1.15:1}))); } const withPenalty=()=>{ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj2.keys()) dist.set(n,Infinity); dist.set(o.node.id,0); const pq=[{n:o.node.id,d:0}]; const modes=state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===d.node.id) break; for(const arc of adj2.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modes[mode]?.speed_kmh||20)/3.6; const t=e.distance_m/speed*(arc.pen||1); const wait=(e.headway_min?.[mode] ?? modes[mode]?.avg_headway_min ?? 0)*60; const trans=(prevMode.get(u)&&prevMode.get(u)!==mode)? (modes[mode]?.transfer_penalty_min||0)*60:0; const w=t + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(d.node.id)) return null; const segs=[]; let cur=d.node.id; while(cur!==o.node.id){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segs.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); cur=u; } segs.reverse(); let totalTime=0,totalCost=0; for(const s of segs){ const sp=(modes[s.mode].speed_kmh)/3.6; totalTime+=s.distance_m/sp; totalCost+=modes[s.mode].fare_per_km*(s.distance_m/1000);} return {segments:segs,totalTime_s:totalTime,totalCost:totalCost}; }; const r2=withPenalty(); if(r2) r2.label='Alternativa A'; let r3=null; if(r1.segments.length>=2){ const ban=r1.segments[Math.floor(r1.segments.length/2)].edgeId; const adj3=buildGraph(allowed); for(const [u,list] of adj3.entries()){ adj3.set(u, list.filter(x=> x.edge.id!==ban)); } r3=routeDijkstra(o.node.id, d.node.id, adj3); if(r3) r3.label='Alternativa B'; } return [r1, ...(r2?[r2]:[]), ...(r3?[r3]:[])]; }
+
+const fmtTime=s=>{ const m=Math.round(s/60); if(m<60) return `${m} min`; const h=(m/60)|0; const mm=m%60; return `${h} h ${mm} min`; };
+const fmtCost=c=>`DOP ${c.toFixed(0)}`;
+function renderRoutes(){ const wrap=document.getElementById('routesList'); if(!state.routes.length){ wrap.innerHTML='No hay rutas calculadas.'; return;} wrap.innerHTML=state.routes.map((r,i)=>{ const active=(i===state.selectedRouteIdx); const btn=`<button class="btn ${active?'':'secondary'}" data-idx="${i}">${active?'Ver':'Seleccionar'}</button>`; const segs=r.segments.map(s=>`<div class="step"><span class="dot" style="background:${state.colors[s.mode]}"></span> <div style="flex:1"><div class="mode">${s.mode}</div><div class="small">${s.name}</div></div> <div class="small">${(s.distance_m/1000).toFixed(1)} km</div></div>`).join(''); return `<div class="route-card"><h3>${r.label}</h3><div class="meta"><span class="time">${fmtTime(r.totalTime_s)}</span> · <span class="cost">${fmtCost(r.totalCost)}</span></div><div class="sep"></div><div class="steps">${segs}</div><div style="margin-top:8px">${btn}</div></div>`; }).join(''); wrap.querySelectorAll('button[data-idx]').forEach(b=> b.addEventListener('click', ()=>{ state.selectedRouteIdx=+b.dataset.idx; redraw(); renderRoutes(); })); }
+
+function exportGeoJSON(){ if(!state.routes.length){ alert('Primero calcula una ruta.'); return; } const r=state.routes[state.selectedRouteIdx]; const features=r.segments.map(s=>{ const a=state.nodesById.get(s.from), b=state.nodesById.get(s.to); return { type:'Feature', properties:{ mode:s.mode, name:s.name, distance_m:s.distance_m }, geometry:{ type:'LineString', coordinates:[[a.lon,a.lat],[b.lon,b.lat]] } }; }); const gj={ type:'FeatureCollection', features }; const blob=new Blob([JSON.stringify(gj,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='ruta.geojson'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+// Inputs / botón ruta
+function parseLatLon(text){ if(!text) return null; const m=text.trim().match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/); if(!m) return null; const lat=+m[1], lon=+m[2]; if(isFinite(lat)&&isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180) return {lat,lon}; return null; }
+function wireRouteButton(){ const hud=document.getElementById('hudInfo'); const run=()=>{ const oi=document.getElementById('originInput').value.trim(); const di=document.getElementById('destInput').value.trim(); if(oi && !state.origin){ const c=parseLatLon(oi); if(c) state.origin=c; else { const r=findByName(oi); if(r) state.origin={lat:r.lat, lon:r.lon}; } } if(di && !state.destination){ const c=parseLatLon(di); if(c) state.destination=c; else { const r=findByName(di); if(r) state.destination={lat:r.lat, lon:r.lon}; } } if(!state.origin || !state.destination){ hud.textContent='Selecciona origen y destino (doble clic o escribe nombre/lat,lon).'; state.routes=[]; renderRoutes(); redraw(); return; } state.routes=computeRoutes(); renderRoutes(); redraw(); if(!state.routes.length){ hud.textContent='No se encontraron rutas con los modos activados.'; } else { const r=state.routes[0]; hud.textContent=`Alternativas: ${state.routes.length} · Mejor tiempo: ${Math.round(r.totalTime_s/60)} min · Costo aprox: DOP ${r.totalCost.toFixed(0)}`; } }; document.getElementById('btnRoute').addEventListener('click', run); ['originInput','destInput'].forEach(id=>{ const el=document.getElementById(id); el.addEventListener('keydown', ev=>{ if(ev.key==='Enter') run(); }); }); }
+
+async function init(){ state.canvas=document.getElementById('map'); state.ctx=state.canvas.getContext('2d'); window.addEventListener('resize', resize); // fuerza altura
+  const wrap=document.getElementById('mapWrap'); state.canvas.style.height = wrap.clientHeight ? wrap.clientHeight+'px' : '100vh'; resize();
+  state.canvas.addEventListener('wheel', onWheel, {passive:false}); state.canvas.addEventListener('mousedown', onMouseDown); window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp); state.canvas.addEventListener('dblclick', onDblClick);
+  const loaded=await tryFetchLocal(); const data=loaded||loadDefaults(); state.network=data.net; state.pois=data.poi; indexData(); renderParamForm(); await redraw(); document.getElementById('hudInfo').textContent = `Nodos: ${state.network.nodes.length} · Tramos: ${state.network.edges.length}`; wireRouteButton(); document.getElementById('btnReset').addEventListener('click', ()=>{ state.origin=null; state.destination=null; state.routes=[]; document.getElementById('originInput').value=''; document.getElementById('destInput').value=''; renderRoutes(); redraw(); document.getElementById('hudInfo').textContent = `Nodos: ${state.network.nodes.length} · Tramos: ${state.network.edges.length}`; }); document.getElementById('btnLoadNetwork').addEventListener('click', ()=> document.getElementById('fileNetwork').click()); document.getElementById('btnLoadPOI').addEventListener('click', ()=> document.getElementById('filePOI').click()); document.getElementById('fileNetwork').addEventListener('change', ev=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.network=JSON.parse(rd.result); indexData(); renderParamForm(); redraw(); document.getElementById('hudInfo').textContent = `Nodos: ${state.network.nodes.length} · Tramos: ${state.network.edges.length}`; }; rd.readAsText(f); }); document.getElementById('filePOI').addEventListener('change', ev=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.pois=JSON.parse(rd.result); buildSearchIndex(); redraw(); }; rd.readAsText(f); }); }
+
+init();
+
+window.addEventListener('load', ()=>{ requestAnimationFrame(()=>{ const c=document.getElementById('map'); if(c && c.clientHeight===0){ c.style.height='100vh'; } resize(); }); }); if('ResizeObserver' in window){ const target=document.getElementById('mapWrap'); if(target){ new ResizeObserver(()=> resize()).observe(target); } }
+</script>
+</body>
+</html>
