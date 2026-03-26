@@ -1,0 +1,10 @@
+{
+  "conditions": [
+    {
+      "id": "lluvia",
+      "name": "Lluvia",
+      "tiempo_pct": 20,
+      "costo_extra": 0
+    }
+  ]
+}
