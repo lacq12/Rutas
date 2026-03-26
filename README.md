@@ -1,3 +1,3 @@
-# Build con diagnóstico para GitHub Pages
+# GitHub Pages FIX 2
 
-Muestra errores en el HUD si algo falla en la carga.
+Corrige literales `${...}` que se mostraban sin evaluar.
