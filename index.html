@@ -232,7 +232,7 @@ const haversine=(a,b)=>{ const toRad=d=>d*Math.PI/180; const Rm=6371000; const d
 function nearestNode(p){ let best=null, bestD=Infinity; for(const n of state.network.nodes){ const d=haversine(p, n); if(d<bestD){bestD=d;best=n;} } return {node:best, distance:bestD}; }
 function buildGraph(allowed){ const adj = new Map(); for(const n of state.network.nodes){ adj.set(n.id, []); } for(const e of state.network.edges){ const modes = e.modes.filter(m=>allowed.has(m)); if(!modes.length) continue; const a = e.from, b=e.to; adj.get(a).push({to:b, edge:e, modes}); adj.get(b).push({to:a, edge:e, modes}); } return adj; }
 function routeDijkstra(startId, endId, adj){ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj.keys()){ dist.set(n, Infinity); } dist.set(startId, 0); const pq=[{n:startId,d:0}]; const modesCfg=state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===endId) break; for(const arc of adj.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modesCfg[mode]?.speed_kmh||20)/3.6; const tEdge=e.distance_m/speed; const wait=(e.headway_min?.[mode] ?? modesCfg[mode]?.avg_headway_min ?? 0) * 60; const trans=(prevMode.get(u) && prevMode.get(u)!==mode)? (modesCfg[mode]?.transfer_penalty_min||0)*60:0; const w=tEdge + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(endId)) return null; const segments=[]; let cur=endId; let totalTime=0,totalCost=0; while(cur!==startId){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segments.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); const sp=(modesCfg[mode]?.speed_kmh||20)/3.6; totalTime+=edge.distance_m/sp; totalCost+=(modesCfg[mode]?.fare_per_km||20)*(edge.distance_m/1000); cur=u; } segments.reverse(); return {segments,totalTime_s:totalTime,totalCost:totalCost}; }
-function computeRoutes(){ if(!state.origin||!state.destination) return []; const o=nearestNode(state.origin), d=nearestNode(state.destination); const allowed=new Set([ document.getElementById('mode_guagua').checked ? 'guagua': null, document.getElementById('mode_concho').checked ? 'concho': null, document.getElementById('mode_carro_publico').checked ? 'carro_publico': null, document.getElementById('mode_motoconcho').checked ? 'motoconcho': null ].filter(Boolean)); const adj=buildGraph(allowed); const r1=routeDijkstra(o.node.id, d.node.id, adj); if(!r1) return []; r1.label='Más rápida'; const penalty=new Set(r1.segments.map(s=>s.edgeId)); const adj2=new Map(); for(const [u,list] of adj.entries()){ adj2.set(u, list.map(x=> ({...x, pen: penalty.has(x.edge.id) ? 1.15:1}))); } const withPenalty=()=>{ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj2.keys()) dist.set(n,Infinity); dist.set(o.node.id,0); const pq=[{n:o.node.id,d:0}]; const modes=state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===d.node.id) break; for(const arc of adj2.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modes[mode]?.speed_kmh||20)/3.6; const t=e.distance_m/speed * (arc.pen||1); const wait=(e.headway_min?.[mode] ?? modes[mode]?.avg_headway_min ?? 0)*60; const trans=(prevMode.get(u)&&prevMode.get(u)!==mode)? (modes[mode]?.transfer_penalty_min||0)*60:0; const w=t + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(d.node.id)) return null; const segs=[]; let cur=d.node.id; while(cur!==o.node.id){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segs.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); cur=u; } segs.reverse(); let totalTime=0,totalCost=0; for(const s of segs){ const sp=(modes[s.mode].speed_kmh)/3.6; totalTime+=s.distance_m/sp; totalCost+=modes[s.mode].fare_per_km*(s.distance_m/1000);} return {segments:segs,totalTime_s:totalTime,totalCost:totalCost}; }; const r2=withPenalty(); if(r2) r2.label='Alternativa A'; let r3=null; if(r1.segments.length>=2){ const ban=r1.segments[Math.floor(r1.segments.length/2)].edgeId; const adj3=buildGraph(allowed); for(const [u,list] of adj3.entries()){ adj3.set(u, list.filter(x=> x.edge.id!==ban)); } r3=routeDijkstra(o.node.id, d.node.id, adj3); if(r3) r3.label='Alternativa B'; } return [r1, ...(r2?[r2]:[]), ...(r3?[r3]:[])]; }
+function computeRoutes(){ if(!state.origin||!state.destination) return []; const o=nearestNode(state.origin), d=nearestNode(state.destination); const allowed=new Set([ document.getElementById('mode_guagua').checked ? 'guagua': null, document.getElementById('mode_concho').checked ? 'concho': null, document.getElementById('mode_carro_publico').checked ? 'carro_publico': null, document.getElementById('mode_motoconcho').checked ? 'motoconcho': null ].filter(Boolean)); if(!allowed.size) return []; const adj=buildGraph(allowed); const r1=routeDijkstra(o.node.id, d.node.id, adj); if(!r1) return []; r1.label='Más rápida'; const penalty=new Set(r1.segments.map(s=>s.edgeId)); const adj2=new Map(); for(const [u,list] of adj.entries()){ adj2.set(u, list.map(x=> ({...x, pen: penalty.has(x.edge.id) ? 1.15:1}))); } const withPenalty=()=>{ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj2.keys()) dist.set(n,Infinity); dist.set(o.node.id,0); const pq=[{n:o.node.id,d:0}]; const modes=state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===d.node.id) break; for(const arc of adj2.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modes[mode]?.speed_kmh||20)/3.6; const t=e.distance_m/speed * (arc.pen||1); const wait=(e.headway_min?.[mode] ?? modes[mode]?.avg_headway_min ?? 0)*60; const trans=(prevMode.get(u)&&prevMode.get(u)!==mode)? (modes[mode]?.transfer_penalty_min||0)*60:0; const w=t + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(d.node.id)) return null; const segs=[]; let cur=d.node.id; while(cur!==o.node.id){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segs.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); cur=u; } segs.reverse(); let totalTime=0,totalCost=0; for(const s of segs){ const sp=(modes[s.mode].speed_kmh)/3.6; totalTime+=s.distance_m/sp; totalCost+=modes[s.mode].fare_per_km*(s.distance_m/1000);} return {segments:segs,totalTime_s:totalTime,totalCost:totalCost}; }; const r2=withPenalty(); if(r2) r2.label='Alternativa A'; let r3=null; if(r1.segments.length>=2){ const ban=r1.segments[Math.floor(r1.segments.length/2)].edgeId; const adj3=buildGraph(allowed); for(const [u,list] of adj3.entries()){ adj3.set(u, list.filter(x=> x.edge.id!==ban)); } r3=routeDijkstra(o.node.id, d.node.id, adj3); if(r3) r3.label='Alternativa B'; } return [r1, ...(r2?[r2]:[]), ...(r3?[r3]:[])]; }
 
 const fmtTime = s => { const m=Math.round(s/60); if(m<60) return `${m} min`; const h=(m/60)|0; const mm=m%60; return `${h} h ${mm} min`; };
 const fmtCost = c => `DOP ${c.toFixed(0)}`;
@@ -240,6 +240,45 @@ const fmtCost = c => `DOP ${c.toFixed(0)}`;
 function renderRoutes(){ const wrap = document.getElementById('routesList'); if(!state.routes.length){ wrap.innerHTML='No hay rutas calculadas.'; return;} wrap.innerHTML = state.routes.map((r,i)=>{ const active=(i===state.selectedRouteIdx); const btn=`<button class="btn ${active?'':'secondary'}" data-idx="${i}">${active?'Ver':'Seleccionar'}</button>`; const segs=r.segments.map(s=>`<div class="step"><span class="dot" style="background:${state.colors[s.mode]}"></span> <div style="flex:1"><div class="mode">${s.mode}</div><div class="small">${s.name}</div></div> <div class="small">${(s.distance_m/1000).toFixed(1)} km</div></div>`).join(''); return `<div class="route-card"><h3>${r.label}</h3><div class="meta"><span class="time">${fmtTime(r.totalTime_s)}</span> · <span class="cost">${fmtCost(r.totalCost)}</span></div><div class="sep"></div><div class="steps">${segs}</div><div style="margin-top:8px">${btn}</div></div>`; }).join(''); wrap.querySelectorAll('button[data-idx]').forEach(b=> b.addEventListener('click', ()=>{ state.selectedRouteIdx=+b.dataset.idx; redraw(); renderRoutes(); })); }
 
 function exportGeoJSON(){ if(!state.routes.length){ alert('Primero calcula una ruta.'); return; } const r=state.routes[state.selectedRouteIdx]; const features=r.segments.map(s=>{ const a=state.nodesById.get(s.from), b=state.nodesById.get(s.to); return { type:'Feature', properties:{ mode:s.mode, name:s.name, distance_m:s.distance_m }, geometry:{ type:'LineString', coordinates:[[a.lon,a.lat],[b.lon,b.lat]] } }; }); const gj={ type:'FeatureCollection', features }; const blob=new Blob([JSON.stringify(gj,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='ruta.geojson'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+// ===== Mejoras del botón Calcular ruta =====
+function parseLatLon(text){
+  if(!text) return null;
+  const m = text.trim().match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+  if(!m) return null;
+  const lat = +m[1], lon = +m[2];
+  if (isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return {lat, lon};
+  return null;
+}
+
+function wireRouteButton(){
+  const hud = document.getElementById('hudInfo');
+  const run = ()=>{
+    const oi = document.getElementById('originInput').value.trim();
+    const di = document.getElementById('destInput').value.trim();
+
+    if (oi && !state.origin){ const c=parseLatLon(oi); if(c) state.origin=c; else { const r=findByName(oi); if(r) state.origin={lat:r.lat, lon:r.lon}; } }
+    if (di && !state.destination){ const c=parseLatLon(di); if(c) state.destination=c; else { const r=findByName(di); if(r) state.destination={lat:r.lat, lon:r.lon}; } }
+
+    if (!state.origin || !state.destination){
+      hud.textContent = 'Selecciona origen y destino (doble clic o escribe nombre/lat,lon).';
+      state.routes=[]; renderRoutes(); redraw(); return;
+    }
+
+    state.routes = computeRoutes(); renderRoutes(); redraw();
+
+    if (!state.routes.length){
+      hud.textContent = 'No se encontraron rutas con los modos activados. Activa más modos y prueba otra vez.';
+    } else {
+      const r = state.routes[0];
+      hud.textContent = `Alternativas: ${state.routes.length} · Mejor tiempo: ${Math.round(r.totalTime_s/60)} min · Costo aprox: DOP ${r.totalCost.toFixed(0)}`;
+    }
+  };
+  document.getElementById('btnRoute').addEventListener('click', run);
+  ['originInput','destInput'].forEach(id=>{
+    const el=document.getElementById(id); el.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter') run(); });
+  });
+}
 
 async function init(){
   state.canvas = document.getElementById('map'); state.ctx = state.canvas.getContext('2d');
@@ -251,12 +290,11 @@ async function init(){
   const loaded = await tryFetchLocal();
   const data = loaded || loadDefaults();
   state.network = data.net; state.pois = data.poi; indexData(); renderParamForm(); redraw();
-
-  // >>> FIX: usar template literal correcto (sin literales escapados)
   document.getElementById('hudInfo').textContent = `Nodos: ${state.network.nodes.length} · Tramos: ${state.network.edges.length}`;
 
-  document.getElementById('btnRoute').addEventListener('click', ()=>{ const oi=document.getElementById('originInput').value.trim(); const di=document.getElementById('destInput').value.trim(); if(oi && !state.origin){ const r=findByName(oi); if(r) state.origin={lat:r.lat, lon:r.lon}; } if(di && !state.destination){ const r=findByName(di); if(r) state.destination={lat:r.lat, lon:r.lon}; } state.routes = computeRoutes(); renderRoutes(); redraw(); });
-  document.getElementById('btnReset').addEventListener('click', ()=>{ state.origin=null; state.destination=null; state.routes=[]; renderRoutes(); redraw(); });
+  wireRouteButton();
+  document.getElementById('btnReset').addEventListener('click', ()=>{ state.origin=null; state.destination=null; state.routes=[]; document.getElementById('originInput').value=''; document.getElementById('destInput').value=''; renderRoutes(); redraw(); document.getElementById('hudInfo').textContent = `Nodos: ${state.network.nodes.length} · Tramos: ${state.network.edges.length}`; });
+
   document.getElementById('btnLoadNetwork').addEventListener('click', ()=> document.getElementById('fileNetwork').click());
   document.getElementById('btnLoadPOI').addEventListener('click', ()=> document.getElementById('filePOI').click());
   document.getElementById('fileNetwork').addEventListener('change', (ev)=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.network=JSON.parse(rd.result); indexData(); renderParamForm(); redraw(); document.getElementById('hudInfo').textContent = `Nodos: ${state.network.nodes.length} · Tramos: ${state.network.edges.length}`; }; rd.readAsText(f); });
