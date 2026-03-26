@@ -119,60 +119,47 @@
 <script id="default-network" type="application/json">{"meta": {"name": "Red de Transporte SD (demo)", "crs": "WGS84", "version": 1}, "modes": {"concho": {"speed_kmh": 25, "fare_per_km": 20, "currency": "DOP", "transfer_penalty_min": 4, "avg_headway_min": 5}, "guagua": {"speed_kmh": 18, "fare_per_km": 15, "currency": "DOP", "transfer_penalty_min": 5, "avg_headway_min": 8}, "carro_publico": {"speed_kmh": 22, "fare_per_km": 20, "currency": "DOP", "transfer_penalty_min": 4, "avg_headway_min": 6}, "motoconcho": {"speed_kmh": 28, "fare_per_km": 30, "currency": "DOP", "transfer_penalty_min": 1, "avg_headway_min": 2}}, "nodes": [{"id": "colonial", "name": "Zona Colonial", "lat": 18.473, "lon": -69.886}, {"id": "gazcue", "name": "Gazcue", "lat": 18.47, "lon": -69.9}, {"id": "villa_juana", "name": "Villa Juana", "lat": 18.488, "lon": -69.915}, {"id": "piantini", "name": "Piantini", "lat": 18.468, "lon": -69.936}, {"id": "churchill_27", "name": "Av. Churchill x 27 de Febrero", "lat": 18.472, "lon": -69.94}, {"id": "nunez", "name": "N\u00fa\u00f1ez de C\u00e1ceres", "lat": 18.473, "lon": -69.962}, {"id": "luperon_27", "name": "Av. Luper\u00f3n x 27 de Febrero", "lat": 18.468, "lon": -69.974}, {"id": "mirador", "name": "Parque Mirador Sur", "lat": 18.446, "lon": -69.965}], "edges": [{"id": "e1", "from": "colonial", "to": "gazcue", "modes": ["carro_publico", "concho", "motoconcho"], "distance_m": 1600, "name": "C. El Conde / Av. Independencia", "headway_min": {"carro_publico": 6, "concho": 5}}, {"id": "e2", "from": "gazcue", "to": "villa_juana", "modes": ["carro_publico", "guagua", "motoconcho"], "distance_m": 2300, "name": "Av. M\u00e1ximo G\u00f3mez", "headway_min": {"guagua": 8, "carro_publico": 6}}, {"id": "e3", "from": "villa_juana", "to": "churchill_27", "modes": ["guagua", "concho", "motoconcho"], "distance_m": 2500, "name": "Av. 27 de Febrero (tramo este)", "headway_min": {"guagua": 8}}, {"id": "e4", "from": "churchill_27", "to": "piantini", "modes": ["carro_publico", "concho", "motoconcho"], "distance_m": 1200, "name": "Av. Winston Churchill", "headway_min": {"carro_publico": 6}}, {"id": "e5", "from": "churchill_27", "to": "nunez", "modes": ["guagua", "carro_publico", "motoconcho"], "distance_m": 2200, "name": "Av. 27 de Febrero (tramo oeste)", "headway_min": {"guagua": 8}}, {"id": "e6", "from": "nunez", "to": "luperon_27", "modes": ["guagua", "carro_publico", "motoconcho"], "distance_m": 1800, "name": "Av. 27 de Febrero (tramo oeste)", "headway_min": {"guagua": 8}}, {"id": "e7", "from": "luperon_27", "to": "mirador", "modes": ["concho", "motoconcho"], "distance_m": 2300, "name": "Av. Luper\u00f3n / Mirador Sur"}, {"id": "e8", "from": "gazcue", "to": "piantini", "modes": ["carro_publico", "motoconcho"], "distance_m": 3000, "name": "Av. Bol\u00edvar \u2192 Av. Abraham Lincoln"}, {"id": "e9", "from": "piantini", "to": "mirador", "modes": ["concho", "motoconcho"], "distance_m": 2600, "name": "Av. N\u00fa\u00f1ez de C\u00e1ceres (sur)"}], "stops": [{"id": "st_colonial_01", "node": "colonial", "name": "Parada Parque Col\u00f3n"}, {"id": "st_gazcue_01", "node": "gazcue", "name": "Parada Independencia"}, {"id": "st_vj_01", "node": "villa_juana", "name": "Parada M\u00e1ximo G\u00f3mez"}, {"id": "st_ch_27_01", "node": "churchill_27", "name": "Parada Churchill"}, {"id": "st_piantini_01", "node": "piantini", "name": "Parada Piantini"}, {"id": "st_nunez_01", "node": "nunez", "name": "Parada N\u00fa\u00f1ez"}, {"id": "st_lup_27_01", "node": "luperon_27", "name": "Parada Luper\u00f3n"}, {"id": "st_mirador_01", "node": "mirador", "name": "Parada Mirador Sur"}]}</script>
 <script id="default-pois" type="application/json">{"meta": {"name": "POIs SD (demo)", "crs": "WGS84", "version": 1}, "places": [{"id": "poi_catedral", "name": "Catedral Primada", "lat": 18.4724, "lon": -69.8829}, {"id": "poi_malecon", "name": "Malec\u00f3n de Santo Domingo", "lat": 18.4607, "lon": -69.9111}, {"id": "poi_agora", "name": "Agora Mall", "lat": 18.4863, "lon": -69.9361}, {"id": "poi_blue_mall", "name": "BlueMall", "lat": 18.4707, "lon": -69.9409}, {"id": "poi_mirador_sur", "name": "Parque Mirador Sur (Centro)", "lat": 18.4479, "lon": -69.9672}]}</script>
 <script>
+// ==== Manejo de errores global para ver por qué se queda en "Cargando…" ====
+(function(){
+  const hud = ()=> document.getElementById('hudInfo');
+  window.addEventListener('error', (e)=>{ if(hud()) hud().textContent = 'Error: '+ (e.message||e.error); });
+  window.addEventListener('unhandledrejection', (e)=>{ if(hud()) hud().textContent = 'Error (promesa): '+ (e.reason && e.reason.message? e.reason.message: e.reason); });
+})();
+
+// ========= Utilidades de proyección =========
 const R = 6378137;
 function lon2x(lon){ return R * (lon*Math.PI/180); }
 function lat2y(lat){ const s = Math.sin(lat*Math.PI/180); return R * Math.log((1+s)/(1-s))/2; }
 function x2lon(x){ return (x/R)*(180/Math.PI); }
 function y2lat(y){ return (2*Math.atan(Math.exp(y/R))-Math.PI/2)*(180/Math.PI); }
 
+// ========= Estado =========
 const state = {
-  network: null,
-  pois: null,
-  nodesById: new Map(),
-  edgesByNode: new Map(),
-  stopsByNode: new Map(),
-  canvas: null, ctx: null,
-  width: 0, height: 0,
-  center: {lat: 18.472, lon: -69.94},
-  zoom: 14,
-  origin: null, destination: null,
-  routes: [],
-  selectedRouteIdx: 0,
+  network: null, pois: null,
+  nodesById: new Map(), edgesByNode: new Map(), stopsByNode: new Map(),
+  canvas: null, ctx: null, width: 0, height: 0,
+  center: {lat: 18.472, lon: -69.94}, zoom: 14,
+  origin: null, destination: null, routes: [], selectedRouteIdx: 0,
   colors: { guagua:'#60a5fa', concho:'#34d399', carro_publico:'#f472b6', motoconcho:'#fbbf24' },
 };
 
-function metersPerPixel(lat, zoom){
-  const scale = 256 * Math.pow(2, zoom);
-  const mpp = Math.cos(lat*Math.PI/180) * 2*Math.PI*R / scale;
-  return mpp;
-}
-function worldToScreen(lat, lon){
-  const cx = lon2x(state.center.lon), cy = lat2y(state.center.lat);
-  const x = lon2x(lon), y = lat2y(lat);
-  const mpp = metersPerPixel(state.center.lat, state.zoom);
-  return { x: state.width/2 + (x-cx)/mpp, y: state.height/2 + (y-cy)/mpp };
-}
-function screenToWorld(xp, yp){
-  const cx = lon2x(state.center.lon), cy = lat2y(state.center.lat);
-  const mpp = metersPerPixel(state.center.lat, state.zoom);
-  const x = cx + (xp - state.width/2) * mpp;
-  const y = cy + (yp - state.height/2) * mpp;
-  return { lat: y2lat(y), lon: x2lon(x) };
-}
+function metersPerPixel(lat, zoom){ const scale = 256 * Math.pow(2, zoom); return Math.cos(lat*Math.PI/180) * 2*Math.PI*R / scale; }
+function worldToScreen(lat, lon){ const cx = lon2x(state.center.lon), cy = lat2y(state.center.lat); const x = lon2x(lon), y = lat2y(lat); const mpp = metersPerPixel(state.center.lat, state.zoom); return { x: state.width/2 + (x-cx)/mpp, y: state.height/2 + (y-cy)/mpp }; }
+function screenToWorld(xp, yp){ const cx = lon2x(state.center.lon), cy = lat2y(state.center.lat); const mpp = metersPerPixel(state.center.lat, state.zoom); const x = cx + (xp - state.width/2) * mpp; const y = cy + (yp - state.height/2) * mpp; return { lat: y2lat(y), lon: x2lon(x) }; }
 
 async function tryFetchLocal(){
   try{
     const [net, poi] = await Promise.all([
-      fetch('./data/network.json').then(r => r.ok ? r.json() : Promise.reject('no-net')),
-      fetch('./data/pois.json').then(r => r.ok ? r.json() : Promise.reject('no-poi'))
+      fetch('./data/network.json').then(r => r.ok ? r.json() : Promise.reject(new Error('network.json no encontrado'))),
+      fetch('./data/pois.json').then(r => r.ok ? r.json() : Promise.reject(new Error('pois.json no encontrado')))
     ]);
     return {net, poi};
-  }catch(e){ return null; }
+  }catch(e){ console.warn('Fallo carga ./data, uso embebidos:', e); return null; }
 }
 function loadDefaults(){
-  const net = JSON.parse(document.getElementById('default-network').textContent);
-  const poi = JSON.parse(document.getElementById('default-pois').textContent);
-  return {net, poi};
+  const netTxt = document.getElementById('default-network').textContent;
+  const poiTxt = document.getElementById('default-pois').textContent;
+  return {net: JSON.parse(netTxt), poi: JSON.parse(poiTxt)};
 }
 function indexData(){
   state.nodesById.clear(); state.edgesByNode.clear(); state.stopsByNode.clear();
@@ -183,10 +170,7 @@ function indexData(){
     state.edgesByNode.get(e.from).push({...e, dir:+1});
     state.edgesByNode.get(e.to).push({...e, dir:-1});
   }
-  for(const s of state.network.stops||[]){
-    if(!state.stopsByNode.has(s.node)) state.stopsByNode.set(s.node, []);
-    state.stopsByNode.get(s.node).push(s);
-  }
+  for(const s of state.network.stops||[]){ if(!state.stopsByNode.has(s.node)) state.stopsByNode.set(s.node, []); state.stopsByNode.get(s.node).push(s); }
   buildSearchIndex();
 }
 
@@ -196,81 +180,31 @@ function buildSearchIndex(){
   for (const n of state.network.nodes){ searchItems.push({type:'nodo', id:n.id, name:n.name, lat:n.lat, lon:n.lon}); }
   for (const s of state.network.stops||[]){ const n = state.nodesById.get(s.node); searchItems.push({type:'parada', id:s.id, name:s.name, lat:n.lat, lon:n.lon}); }
   for (const p of state.pois.places||[]){ searchItems.push({type:'poi', id:p.id, name:p.name, lat:p.lat, lon:p.lon}); }
-  const dl = document.getElementById('searchList');
-  dl.innerHTML = searchItems.map(it=>`<option value="${it.name}"></option>`).join('');
+  const dl = document.getElementById('searchList'); dl.innerHTML = searchItems.map(it=>`<option value="${it.name}"></option>`).join('');
 }
 function findByName(q){ q = q.trim().toLowerCase(); return searchItems.find(it=>it.name.toLowerCase()===q) || null; }
 
 function renderParamForm(){
-  const wrap = document.getElementById('paramForm');
-  const m = state.network.modes;
-  const rows = Object.keys(m).map(k=>{
-    const v=m[k];
-    return `<div class="row">
-      <div style="flex:1"><div><b>${k}</b></div>
-      <div class="small">Velocidad (km/h)</div>
-      <input type="range" min="8" max="60" step="1" value="${v.speed_kmh}" id="speed_${k}"> <span id="speedv_${k}">${v.speed_kmh}</span>
-      <div class="small">Tarifa por km (DOP)</div>
-      <input type="range" min="5" max="60" step="1" value="${v.fare_per_km}" id="fare_${k}"> <span id="farev_${k}">${v.fare_per_km}</span>
-      <div class="small">Penalidad de transbordo (min)</div>
-      <input type="range" min="0" max="15" step="1" value="${v.transfer_penalty_min||0}" id="pen_${k}"> <span id="penv_${k}">${v.transfer_penalty_min||0}</span>
-      </div></div>`;
-  }).join('');
+  const wrap = document.getElementById('paramForm'); const m = state.network.modes;
+  const rows = Object.keys(m).map(k=>{ const v=m[k]; return `<div class="row"><div style="flex:1"><div><b>${k}</b></div>
+    <div class="small">Velocidad (km/h)</div>
+    <input type="range" min="8" max="60" step="1" value="${v.speed_kmh}" id="speed_${k}"> <span id="speedv_${k}">${v.speed_kmh}</span>
+    <div class="small">Tarifa por km (DOP)</div>
+    <input type="range" min="5" max="60" step="1" value="${v.fare_per_km}" id="fare_${k}"> <span id="farev_${k}">${v.fare_per_km}</span>
+    <div class="small">Penalidad de transbordo (min)</div>
+    <input type="range" min="0" max="15" step="1" value="${v.transfer_penalty_min||0}" id="pen_${k}"> <span id="penv_${k}">${v.transfer_penalty_min||0}</span>
+  </div></div>`; }).join('');
   wrap.innerHTML = rows;
   for(const k of Object.keys(m)){
-    const upd = ()=>{
-      m[k].speed_kmh = +document.getElementById('speed_'+k).value;
-      m[k].fare_per_km = +document.getElementById('fare_'+k).value;
-      m[k].transfer_penalty_min = +document.getElementById('pen_'+k).value;
-      document.getElementById('speedv_'+k).textContent = m[k].speed_kmh;
-      document.getElementById('farev_'+k).textContent = m[k].fare_per_km;
-      document.getElementById('penv_'+k).textContent = m[k].transfer_penalty_min;
-      redraw();
-    };
+    const upd = ()=>{ m[k].speed_kmh = +document.getElementById('speed_'+k).value; m[k].fare_per_km = +document.getElementById('fare_'+k).value; m[k].transfer_penalty_min = +document.getElementById('pen_'+k).value; document.getElementById('speedv_'+k).textContent = m[k].speed_kmh; document.getElementById('farev_'+k).textContent = m[k].fare_per_km; document.getElementById('penv_'+k).textContent = m[k].transfer_penalty_min; redraw(); };
     ['speed_','fare_','pen_'].forEach(p=> document.getElementById(p+k).addEventListener('input', upd));
   }
 }
 
-function resize(){
-  const c = state.canvas; const dpr = window.devicePixelRatio||1;
-  state.width = c.clientWidth; state.height = c.clientHeight;
-  c.width = Math.max(1, Math.floor(state.width*dpr));
-  c.height = Math.max(1, Math.floor(state.height*dpr));
-  state.ctx.setTransform(dpr,0,0,dpr,0,0);
-  redraw();
-}
-function drawGrid(){
-  const ctx = state.ctx; ctx.save();
-  ctx.globalAlpha = 0.3; ctx.strokeStyle = '#1f2937';
-  for(let x=0; x<state.width; x+=100){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,state.height); ctx.stroke(); }
-  for(let y=0; y<state.height; y+=100){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(state.width,y); ctx.stroke(); }
-  ctx.restore();
-}
-function drawNetwork(){
-  const ctx = state.ctx;
-  for(const e of state.network.edges){
-    const a = state.nodesById.get(e.from); const b = state.nodesById.get(e.to);
-    const A = worldToScreen(a.lat, a.lon); const B = worldToScreen(b.lat, b.lon);
-    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y);
-    ctx.lineWidth = 4; ctx.strokeStyle = '#263042'; ctx.stroke();
-  }
-  for(const s of state.network.stops||[]){ const n = state.nodesById.get(s.node); const P = worldToScreen(n.lat, n.lon);
-    state.ctx.fillStyle = '#e5e7eb'; state.ctx.beginPath(); state.ctx.arc(P.x,P.y,3,0,Math.PI*2); state.ctx.fill();
-  }
-  if(state.origin){ const P=worldToScreen(state.origin.lat, state.origin.lon); state.ctx.fillStyle='#22d3ee'; state.ctx.beginPath(); state.ctx.arc(P.x,P.y,7,0,Math.PI*2); state.ctx.fill(); }
-  if(state.destination){ const P=worldToScreen(state.destination.lat, state.destination.lon); state.ctx.fillStyle='#a78bfa'; state.ctx.beginPath(); state.ctx.arc(P.x,P.y,7,0,Math.PI*2); state.ctx.fill(); }
-}
-function drawRoute(route, highlight=false){
-  const ctx = state.ctx; ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round';
-  for(const seg of route.segments){
-    const a = state.nodesById.get(seg.from); const b = state.nodesById.get(seg.to);
-    const A = worldToScreen(a.lat, a.lon); const B = worldToScreen(b.lat, b.lon);
-    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y);
-    ctx.lineWidth = highlight? 6:5; ctx.strokeStyle = '#111827'; ctx.stroke();
-    ctx.lineWidth = highlight? 4:3; ctx.strokeStyle = state.colors[seg.mode]||'#fff'; ctx.stroke();
-  }
-  ctx.restore();
-}
+function resize(){ const c = state.canvas; const dpr = window.devicePixelRatio||1; state.width = c.clientWidth; state.height = c.clientHeight; c.width = Math.max(1, Math.floor(state.width*dpr)); c.height = Math.max(1, Math.floor(state.height*dpr)); state.ctx.setTransform(dpr,0,0,dpr,0,0); redraw(); }
+function drawGrid(){ const ctx = state.ctx; ctx.save(); ctx.globalAlpha = 0.3; ctx.strokeStyle = '#1f2937'; for(let x=0; x<state.width; x+=100){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,state.height); ctx.stroke(); } for(let y=0; y<state.height; y+=100){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(state.width,y); ctx.stroke(); } ctx.restore(); }
+function drawNetwork(){ if(!state.network) return; const ctx = state.ctx; for(const e of state.network.edges){ const a = state.nodesById.get(e.from); const b = state.nodesById.get(e.to); const A = worldToScreen(a.lat, a.lon); const B = worldToScreen(b.lat, b.lon); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineWidth = 4; ctx.strokeStyle = '#263042'; ctx.stroke(); } for(const s of state.network.stops||[]){ const n = state.nodesById.get(s.node); const P = worldToScreen(n.lat, n.lon); state.ctx.fillStyle = '#e5e7eb'; state.ctx.beginPath(); state.ctx.arc(P.x,P.y,3,0,Math.PI*2); state.ctx.fill(); } if(state.origin){ const P=worldToScreen(state.origin.lat, state.origin.lon); state.ctx.fillStyle='#22d3ee'; state.ctx.beginPath(); state.ctx.arc(P.x,P.y,7,0,Math.PI*2); state.ctx.fill(); } if(state.destination){ const P=worldToScreen(state.destination.lat, state.destination.lon); state.ctx.fillStyle='#a78bfa'; state.ctx.beginPath(); state.ctx.arc(P.x,P.y,7,0,Math.PI*2); state.ctx.fill(); } }
+function drawRoute(route, highlight=false){ const ctx = state.ctx; ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round'; for(const seg of route.segments){ const a = state.nodesById.get(seg.from); const b = state.nodesById.get(seg.to); const A = worldToScreen(a.lat, a.lon); const B = worldToScreen(b.lat, b.lon); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineWidth = highlight? 6:5; ctx.strokeStyle = '#111827'; ctx.stroke(); ctx.lineWidth = highlight? 4:3; ctx.strokeStyle = state.colors[seg.mode]||'#fff'; ctx.stroke(); } ctx.restore(); }
 function redraw(){ if(!state.ctx) return; state.ctx.clearRect(0,0,state.width,state.height); drawGrid(); drawNetwork(); if(state.routes.length){ state.routes.forEach((r,i)=> drawRoute(r, i===state.selectedRouteIdx)); } }
 
 let dragging=false, lastX=0, lastY=0;
@@ -279,61 +213,46 @@ function onMouseDown(ev){ dragging=true; lastX=ev.clientX; lastY=ev.clientY; sta
 function onMouseMove(ev){ if(!dragging) return; const dx=ev.clientX-lastX, dy=ev.clientY-lastY; lastX=ev.clientX; lastY=ev.clientY; const a=screenToWorld(0,0), b=screenToWorld(dx,dy); state.center.lat -= (b.lat-a.lat); state.center.lon -= (b.lon-a.lon); redraw(); }
 function onMouseUp(){ dragging=false; state.canvas.classList.remove('dragging'); }
 function onDblClick(ev){ const w = screenToWorld(ev.offsetX, ev.offsetY); if(!state.origin){ state.origin = w; updateInputsFromState(); } else if(!state.destination){ state.destination = w; updateInputsFromState(); } else { state.origin=w; state.destination=null; } redraw(); }
-function updateInputsFromState(){ const oi = document.getElementById('originInput'); const di = document.getElementById('destInput'); if(state.origin) oi.value = `${state.origin.lat.toFixed(5)}, ${state.origin.lon.toFixed(5)}`; if(state.destination) di.value = `${state.destination.lat.toFixed(5)}, ${state.destination.lon.toFixed(5)}`; }
+function updateInputsFromState(){ const oi = document.getElementById('originInput'); const di = document.getElementById('destInput'); if(state.origin) oi.value = `${'${'}state.origin.lat.toFixed(5){'}'}, ${'${'}state.origin.lon.toFixed(5){'}'}`; if(state.destination) di.value = `${'${'}state.destination.lat.toFixed(5){'}'}, ${'${'}state.destination.lon.toFixed(5){'}'}`; }
 
 function haversine(a,b){ const toRad = d=>d*Math.PI/180; const Rm=6371000; const dLat=toRad(b.lat-a.lat), dLon=toRad(b.lon-a.lon); const s1=Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLon/2)**2; return 2*Rm*Math.asin(Math.sqrt(s1)); }
 function nearestNode(p){ let best=null, bestD=Infinity; for(const n of state.network.nodes){ const d=haversine(p, n); if(d<bestD){bestD=d;best=n;} } return {node:best, distance:bestD}; }
 function buildGraph(allowed){ const adj = new Map(); for(const n of state.network.nodes){ adj.set(n.id, []); } for(const e of state.network.edges){ const modes = e.modes.filter(m=>allowed.has(m)); if(!modes.length) continue; const a = e.from, b=e.to; adj.get(a).push({to:b, edge:e, modes}); adj.get(b).push({to:a, edge:e, modes}); } return adj; }
-function routeDijkstra(startId, endId, adj){ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj.keys()){ dist.set(n, Infinity); } dist.set(startId, 0); const pq=[{n:startId,d:0}]; const modesCfg = state.network.modes;
-  while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===endId) break; for(const arc of adj.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modesCfg[mode]?.speed_kmh||20)/3.6; const tEdge=e.distance_m/speed; const wait=(e.headway_min?.[mode] ?? modesCfg[mode]?.avg_headway_min ?? 0) * 60; const trans=(prevMode.get(u) && prevMode.get(u)!==mode)? (modesCfg[mode]?.transfer_penalty_min||0)*60:0; const w=tEdge + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } }
-  if(!prev.has(endId)) return null; const segments=[]; let cur=endId; let totalTime=0,totalCost=0; while(cur!==startId){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segments.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); const sp=(modesCfg[mode]?.speed_kmh||20)/3.6; totalTime+=edge.distance_m/sp; totalCost+=(modesCfg[mode]?.fare_per_km||20)*(edge.distance_m/1000); cur=u; } segments.reverse(); return {segments,totalTime_s:totalTime,totalCost:totalCost}; }
-function computeRoutes(){ if(!state.origin||!state.destination) return []; const o=nearestNode(state.origin), d=nearestNode(state.destination); const allowed=new Set([ document.getElementById('mode_guagua').checked ? 'guagua': null, document.getElementById('mode_concho').checked ? 'concho': null, document.getElementById('mode_carro_publico').checked ? 'carro_publico': null, document.getElementById('mode_motoconcho').checked ? 'motoconcho': null ].filter(Boolean)); const adj=buildGraph(allowed); const r1=routeDijkstra(o.node.id, d.node.id, adj); if(!r1) return []; r1.label='Más rápida'; const penalty=new Set(r1.segments.map(s=>s.edgeId)); const adj2=new Map(); for(const [u,list] of adj.entries()){ adj2.set(u, list.map(x=> ({...x, pen: penalty.has(x.edge.id) ? 1.15:1}))); }
-  function withPenalty(){ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj2.keys()) dist.set(n,Infinity); dist.set(o.node.id,0); const pq=[{n:o.node.id,d:0}]; const modes=state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===d.node.id) break; for(const arc of adj2.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modes[mode]?.speed_kmh||20)/3.6; const t=e.distance_m/speed * (arc.pen||1); const wait=(e.headway_min?.[mode] ?? modes[mode]?.avg_headway_min ?? 0)*60; const trans=(prevMode.get(u)&&prevMode.get(u)!==mode)? (modes[mode]?.transfer_penalty_min||0)*60:0; const w=t + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(d.node.id)) return null; const segs=[]; let cur=d.node.id; while(cur!==o.node.id){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segs.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); cur=u; } segs.reverse(); let totalTime=0,totalCost=0; for(const s of segs){ const sp=(modes[s.mode].speed_kmh)/3.6; totalTime+=s.distance_m/sp; totalCost+=modes[s.mode].fare_per_km*(s.distance_m/1000);} return {segments:segs,totalTime_s:totalTime,totalCost:totalCost}; }
-  const r2=withPenalty(); if(r2) r2.label='Alternativa A'; let r3=null; if(r1.segments.length>=2){ const ban=r1.segments[Math.floor(r1.segments.length/2)].edgeId; const adj3=buildGraph(allowed); for(const [u,list] of adj3.entries()){ adj3.set(u, list.filter(x=> x.edge.id!==ban)); } r3=routeDijkstra(o.node.id, d.node.id, adj3); if(r3) r3.label='Alternativa B'; } return [r1, ...(r2?[r2]:[]), ...(r3?[r3]:[])]; }
-function fmtTime(s){ const m=Math.round(s/60); if(m<60) return m+" min"; const h=(m/60)|0; const mm=m%60; return `${h} h ${mm} min`; }
-function fmtCost(c){ return `DOP ${c.toFixed(0)}`; }
-function renderRoutes(){ const wrap = document.getElementById('routesList'); if(!state.routes.length){ wrap.innerHTML='No hay rutas calculadas.'; return;} wrap.innerHTML = state.routes.map((r,i)=>{ const active=(i===state.selectedRouteIdx); const btn=`<button class=\"btn ${active?'':'secondary'}\" data-idx=\"${i}\">${active?'Ver':'Seleccionar'}</button>`; const segs=r.segments.map(s=>`<div class=\"step\"><span class=\"dot\" style=\"background:${state.colors[s.mode]}\"></span> <div style=\"flex:1\"><div class=\"mode\">${s.mode}</div><div class=\"small\">${s.name}</div></div> <div class=\"small\">${(s.distance_m/1000).toFixed(1)} km</div></div>`).join(''); return `<div class=\"route-card\"><h3>${r.label}</h3><div class=\"meta\"><span class=\"time\">${fmtTime(r.totalTime_s)}</span> · <span class=\"cost\">${fmtCost(r.totalCost)}</span></div><div class=\"sep\"></div><div class=\"steps\">${segs}</div><div style=\"margin-top:8px\">${btn}</div></div>`; }).join(''); wrap.querySelectorAll('button[data-idx]').forEach(b=> b.addEventListener('click', ()=>{ state.selectedRouteIdx=+b.dataset.idx; redraw(); renderRoutes(); })); }
+function routeDijkstra(startId, endId, adj){ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj.keys()){ dist.set(n, Infinity); } dist.set(startId, 0); const pq=[{n:startId,d:0}]; const modesCfg = state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===endId) break; for(const arc of adj.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modesCfg[mode]?.speed_kmh||20)/3.6; const tEdge=e.distance_m/speed; const wait=(e.headway_min?.[mode] ?? modesCfg[mode]?.avg_headway_min ?? 0) * 60; const trans=(prevMode.get(u) && prevMode.get(u)!==mode)? (modesCfg[mode]?.transfer_penalty_min||0)*60:0; const w=tEdge + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(endId)) return null; const segments=[]; let cur=endId; let totalTime=0,totalCost=0; while(cur!==startId){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segments.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); const sp=(modesCfg[mode]?.speed_kmh||20)/3.6; totalTime+=edge.distance_m/sp; totalCost+=(modesCfg[mode]?.fare_per_km||20)*(edge.distance_m/1000); cur=u; } segments.reverse(); return {segments,totalTime_s:totalTime,totalCost:totalCost}; }
+function computeRoutes(){ if(!state.origin||!state.destination) return []; const o=nearestNode(state.origin), d=nearestNode(state.destination); const allowed=new Set([ document.getElementById('mode_guagua').checked ? 'guagua': null, document.getElementById('mode_concho').checked ? 'concho': null, document.getElementById('mode_carro_publico').checked ? 'carro_publico': null, document.getElementById('mode_motoconcho').checked ? 'motoconcho': null ].filter(Boolean)); const adj=buildGraph(allowed); const r1=routeDijkstra(o.node.id, d.node.id, adj); if(!r1) return []; r1.label='Más rápida'; const penalty=new Set(r1.segments.map(s=>s.edgeId)); const adj2=new Map(); for(const [u,list] of adj.entries()){ adj2.set(u, list.map(x=> ({...x, pen: penalty.has(x.edge.id) ? 1.15:1}))); } function withPenalty(){ const dist=new Map(), prev=new Map(), prevMode=new Map(); for(const n of adj2.keys()) dist.set(n,Infinity); dist.set(o.node.id,0); const pq=[{n:o.node.id,d:0}]; const modes=state.network.modes; while(pq.length){ const cur=pq.shift(); const u=cur.n; if(cur.d!==dist.get(u)) continue; if(u===d.node.id) break; for(const arc of adj2.get(u)){ const v=arc.to, e=arc.edge; for(const mode of arc.modes){ const speed=(modes[mode]?.speed_kmh||20)/3.6; const t=e.distance_m/speed * (arc.pen||1); const wait=(e.headway_min?.[mode] ?? modes[mode]?.avg_headway_min ?? 0)*60; const trans=(prevMode.get(u)&&prevMode.get(u)!==mode)? (modes[mode]?.transfer_penalty_min||0)*60:0; const w=t + (prevMode.get(u)?0:wait) + trans; const alt=dist.get(u)+w; if(alt<dist.get(v)){ dist.set(v,alt); prev.set(v,{u,edge:e}); prevMode.set(v,mode);} } } } if(!prev.has(d.node.id)) return null; const segs=[]; let cur=d.node.id; while(cur!==o.node.id){ const {u,edge}=prev.get(cur); const mode=prevMode.get(cur); segs.push({from:u,to:cur,edgeId:edge.id,name:edge.name,mode,distance_m:edge.distance_m}); cur=u; } segs.reverse(); let totalTime=0,totalCost=0; for(const s of segs){ const sp=(modes[s.mode].speed_kmh)/3.6; totalTime+=s.distance_m/sp; totalCost+=modes[s.mode].fare_per_km*(s.distance_m/1000);} return {segments:segs,totalTime_s:totalTime,totalCost:totalCost}; } const r2=withPenalty(); if(r2) r2.label='Alternativa A'; let r3=null; if(r1.segments.length>=2){ const ban=r1.segments[Math.floor(r1.segments.length/2)].edgeId; const adj3=buildGraph(allowed); for(const [u,list] of adj3.entries()){ adj3.set(u, list.filter(x=> x.edge.id!==ban)); } r3=routeDijkstra(o.node.id, d.node.id, adj3); if(r3) r3.label='Alternativa B'; } return [r1, ...(r2?[r2]:[]), ...(r3?[r3]:[])]; }
+function fmtTime(s){ const m=Math.round(s/60); if(m<60) return m+" min"; const h=(m/60)|0; const mm=m%60; return `${'${'}h{'}'} h ${'${'}mm{'}'} min`; }
+function fmtCost(c){ return `DOP ${'${'}c.toFixed(0){'}'}`; }
+function renderRoutes(){ const wrap = document.getElementById('routesList'); if(!state.routes.length){ wrap.innerHTML='No hay rutas calculadas.'; return;} wrap.innerHTML = state.routes.map((r,i)=>{ const active=(i===state.selectedRouteIdx); const btn=`<button class=\"btn ${'${'}active?'':'secondary'{'}'}\" data-idx=\"${'${'}i{'}'}\">${'${'}active?'Ver':'Seleccionar'{'}'}</button>`; const segs=r.segments.map(s=>`<div class=\"step\"><span class=\"dot\" style=\"background:${'${'}state.colors[s.mode]{'}'}\"></span> <div style=\"flex:1\"><div class=\"mode\">${'${'}s.mode{'}'}</div><div class=\"small\">${'${'}s.name{'}'}</div></div> <div class=\"small\">${'${'}(s.distance_m/1000).toFixed(1){'}'} km</div></div>`).join(''); return `<div class=\"route-card\"><h3>${'${'}r.label{'}'}</h3><div class=\"meta\"><span class=\"time\">${'${'}fmtTime(r.totalTime_s){'}'}</span> · <span class=\"cost\">${'${'}fmtCost(r.totalCost){'}'}</span></div><div class=\"sep\"></div><div class=\"steps\">${'${'}segs{'}'}</div><div style=\"margin-top:8px\">${'${'}btn{'}'}</div></div>`; }).join(''); wrap.querySelectorAll('button[data-idx]').forEach(b=> b.addEventListener('click', ()=>{ state.selectedRouteIdx=+b.dataset.idx; redraw(); renderRoutes(); })); }
 function exportGeoJSON(){ if(!state.routes.length){ alert('Primero calcula una ruta.'); return; } const r=state.routes[state.selectedRouteIdx]; const features=r.segments.map(s=>{ const a=state.nodesById.get(s.from), b=state.nodesById.get(s.to); return { type:'Feature', properties:{ mode:s.mode, name:s.name, distance_m:s.distance_m }, geometry:{ type:'LineString', coordinates:[[a.lon,a.lat],[b.lon,b.lat]] } }; }); const gj={ type:'FeatureCollection', features }; const blob=new Blob([JSON.stringify(gj,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='ruta.geojson'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 
 async function init(){
-  state.canvas = document.getElementById('map'); state.ctx = state.canvas.getContext('2d');
-  window.addEventListener('resize', resize); resize();
-  state.canvas.addEventListener('wheel', onWheel, {passive:false});
-  state.canvas.addEventListener('mousedown', onMouseDown); window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp);
-  state.canvas.addEventListener('dblclick', onDblClick);
+  try{
+    state.canvas = document.getElementById('map'); state.ctx = state.canvas.getContext('2d');
+    window.addEventListener('resize', resize); resize();
+    state.canvas.addEventListener('wheel', onWheel, {passive:false});
+    state.canvas.addEventListener('mousedown', onMouseDown); window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp);
+    state.canvas.addEventListener('dblclick', onDblClick);
 
-  const loaded = await tryFetchLocal();
-  const data = loaded || loadDefaults();
-  state.network = data.net; state.pois = data.poi; indexData(); renderParamForm(); redraw();
-  document.getElementById('hudInfo').textContent = `Nodos: ${state.network.nodes.length} · Tramos: ${state.network.edges.length}`;
+    const loaded = await tryFetchLocal();
+    const data = loaded || loadDefaults();
+    state.network = data.net; state.pois = data.poi; indexData(); renderParamForm(); redraw();
+    document.getElementById('hudInfo').textContent = `Nodos: ${'${'}state.network.nodes.length{'}'} · Tramos: ${'${'}state.network.edges.length{'}'}`;
 
-  document.getElementById('btnRoute').addEventListener('click', ()=>{ 
-    const oi=document.getElementById('originInput').value.trim(); const di=document.getElementById('destInput').value.trim();
-    if(oi && !state.origin){ const r=findByName(oi); if(r) state.origin={lat:r.lat, lon:r.lon}; }
-    if(di && !state.destination){ const r=findByName(di); if(r) state.destination={lat:r.lat, lon:r.lon}; }
-    state.routes = computeRoutes(); renderRoutes(); redraw();
-  });
-  document.getElementById('btnReset').addEventListener('click', ()=>{ state.origin=null; state.destination=null; state.routes=[]; renderRoutes(); redraw(); });
-
-  document.getElementById('btnLoadNetwork').addEventListener('click', ()=> document.getElementById('fileNetwork').click());
-  document.getElementById('btnLoadPOI').addEventListener('click', ()=> document.getElementById('filePOI').click());
-  document.getElementById('fileNetwork').addEventListener('change', (ev)=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.network=JSON.parse(rd.result); indexData(); renderParamForm(); redraw(); }; rd.readAsText(f); });
-  document.getElementById('filePOI').addEventListener('change', (ev)=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.pois=JSON.parse(rd.result); buildSearchIndex(); redraw(); }; rd.readAsText(f); });
+    document.getElementById('btnRoute').addEventListener('click', ()=>{ const oi=document.getElementById('originInput').value.trim(); const di=document.getElementById('destInput').value.trim(); if(oi && !state.origin){ const r=findByName(oi); if(r) state.origin={lat:r.lat, lon:r.lon}; } if(di && !state.destination){ const r=findByName(di); if(r) state.destination={lat:r.lat, lon:r.lon}; } state.routes = computeRoutes(); renderRoutes(); redraw(); });
+    document.getElementById('btnReset').addEventListener('click', ()=>{ state.origin=null; state.destination=null; state.routes=[]; renderRoutes(); redraw(); });
+    document.getElementById('btnLoadNetwork').addEventListener('click', ()=> document.getElementById('fileNetwork').click());
+    document.getElementById('btnLoadPOI').addEventListener('click', ()=> document.getElementById('filePOI').click());
+    document.getElementById('fileNetwork').addEventListener('change', (ev)=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.network=JSON.parse(rd.result); indexData(); renderParamForm(); redraw(); document.getElementById('hudInfo').textContent = `Nodos: ${'${'}state.network.nodes.length{'}'} · Tramos: ${'${'}state.network.edges.length{'}'}`; }; rd.readAsText(f); });
+    document.getElementById('filePOI').addEventListener('change', (ev)=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.pois=JSON.parse(rd.result); buildSearchIndex(); redraw(); }; rd.readAsText(f); });
+  }catch(err){
+    console.error(err); const hud = document.getElementById('hudInfo'); if(hud) hud.textContent = 'Error: ' + (err && err.message ? err.message : err);
+  }
 }
 
 init();
 
-window.addEventListener('load', () => {
-  requestAnimationFrame(() => {
-    const c = document.getElementById('map');
-    if (c && c.clientHeight === 0) { c.style.height = '100vh'; }
-    if (typeof resize === 'function') resize();
-  });
-});
-if ('ResizeObserver' in window) {
-  const target = document.getElementById('mapWrap');
-  if (target) { new ResizeObserver(() => { if (typeof resize === 'function') resize(); }).observe(target); }
-}
+window.addEventListener('load', () => { requestAnimationFrame(() => { const c = document.getElementById('map'); if (c && c.clientHeight === 0) { c.style.height = '100vh'; } if (typeof resize === 'function') resize(); }); });
+if ('ResizeObserver' in window) { const target = document.getElementById('mapWrap'); if (target) { new ResizeObserver(() => { if (typeof resize === 'function') resize(); }).observe(target); } }
 </script>
 </body>
 </html>
