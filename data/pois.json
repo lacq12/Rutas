@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "name": "POIs SD (demo)",
+    "crs": "WGS84",
+    "version": 1
+  },
+  "places": [
+    {
+      "id": "poi_catedral",
+      "name": "Catedral Primada",
+      "lat": 18.4724,
+      "lon": -69.8829
+    },
+    {
+      "id": "poi_malecon",
+      "name": "Malecón de Santo Domingo",
+      "lat": 18.4607,
+      "lon": -69.9111
+    },
+    {
+      "id": "poi_agora",
+      "name": "Agora Mall",
+      "lat": 18.4863,
+      "lon": -69.9361
+    },
+    {
+      "id": "poi_blue_mall",
+      "name": "BlueMall",
+      "lat": 18.4707,
+      "lon": -69.9409
+    },
+    {
+      "id": "poi_mirador_sur",
+      "name": "Parque Mirador Sur (Centro)",
+      "lat": 18.4479,
+      "lon": -69.9672
+    }
+  ]
+}
