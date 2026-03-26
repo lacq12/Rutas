@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "name": "Red de Transporte SD (demo)",
+    "crs": "WGS84",
+    "version": 1
+  },
+  "modes": {
+    "concho": {
+      "speed_kmh": 25,
+      "fare_per_km": 20,
+      "currency": "DOP",
+      "transfer_penalty_min": 4,
+      "avg_headway_min": 5
+    },
+    "guagua": {
+      "speed_kmh": 18,
+      "fare_per_km": 15,
+      "currency": "DOP",
+      "transfer_penalty_min": 5,
+      "avg_headway_min": 8
+    },
+    "carro_publico": {
+      "speed_kmh": 22,
+      "fare_per_km": 20,
+      "currency": "DOP",
+      "transfer_penalty_min": 4,
+      "avg_headway_min": 6
+    },
+    "motoconcho": {
+      "speed_kmh": 28,
+      "fare_per_km": 30,
+      "currency": "DOP",
+      "transfer_penalty_min": 1,
+      "avg_headway_min": 2
+    }
+  },
+  "nodes": [
+    {
+      "id": "colonial",
+      "name": "Zona Colonial",
+      "lat": 18.473,
+      "lon": -69.886
+    },
+    {
+      "id": "gazcue",
+      "name": "Gazcue",
+      "lat": 18.47,
+      "lon": -69.9
+    },
+    {
+      "id": "villa_juana",
+      "name": "Villa Juana",
+      "lat": 18.488,
+      "lon": -69.915
+    },
+    {
+      "id": "piantini",
+      "name": "Piantini",
+      "lat": 18.468,
+      "lon": -69.936
+    },
+    {
+      "id": "churchill_27",
+      "name": "Av. Churchill x 27 de Febrero",
+      "lat": 18.472,
+      "lon": -69.94
+    },
+    {
+      "id": "nunez",
+      "name": "Núñez de Cáceres",
+      "lat": 18.473,
+      "lon": -69.962
+    },
+    {
+      "id": "luperon_27",
+      "name": "Av. Luperón x 27 de Febrero",
+      "lat": 18.468,
+      "lon": -69.974
+    },
+    {
+      "id": "mirador",
+      "name": "Parque Mirador Sur",
+      "lat": 18.446,
+      "lon": -69.965
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "colonial",
+      "to": "gazcue",
+      "modes": [
+        "carro_publico",
+        "concho",
+        "motoconcho"
+      ],
+      "distance_m": 1600,
+      "name": "C. El Conde / Av. Independencia",
+      "headway_min": {
+        "carro_publico": 6,
+        "concho": 5
+      }
+    },
+    {
+      "id": "e2",
+      "from": "gazcue",
+      "to": "villa_juana",
+      "modes": [
+        "carro_publico",
+        "guagua",
+        "motoconcho"
+      ],
+      "distance_m": 2300,
+      "name": "Av. Máximo Gómez",
+      "headway_min": {
+        "guagua": 8,
+        "carro_publico": 6
+      }
+    },
+    {
+      "id": "e3",
+      "from": "villa_juana",
+      "to": "churchill_27",
+      "modes": [
+        "guagua",
+        "concho",
+        "motoconcho"
+      ],
+      "distance_m": 2500,
+      "name": "Av. 27 de Febrero (tramo este)",
+      "headway_min": {
+        "guagua": 8
+      }
+    },
+    {
+      "id": "e4",
+      "from": "churchill_27",
+      "to": "piantini",
+      "modes": [
+        "carro_publico",
+        "concho",
+        "motoconcho"
+      ],
+      "distance_m": 1200,
+      "name": "Av. Winston Churchill",
+      "headway_min": {
+        "carro_publico": 6
+      }
+    },
+    {
+      "id": "e5",
+      "from": "churchill_27",
+      "to": "nunez",
+      "modes": [
+        "guagua",
+        "carro_publico",
+        "motoconcho"
+      ],
+      "distance_m": 2200,
+      "name": "Av. 27 de Febrero (tramo oeste)",
+      "headway_min": {
+        "guagua": 8
+      }
+    },
+    {
+      "id": "e6",
+      "from": "nunez",
+      "to": "luperon_27",
+      "modes": [
+        "guagua",
+        "carro_publico",
+        "motoconcho"
+      ],
+      "distance_m": 1800,
+      "name": "Av. 27 de Febrero (tramo oeste)",
+      "headway_min": {
+        "guagua": 8
+      }
+    },
+    {
+      "id": "e7",
+      "from": "luperon_27",
+      "to": "mirador",
+      "modes": [
+        "concho",
+        "motoconcho"
+      ],
+      "distance_m": 2300,
+      "name": "Av. Luperón / Mirador Sur"
+    },
+    {
+      "id": "e8",
+      "from": "gazcue",
+      "to": "piantini",
+      "modes": [
+        "carro_publico",
+        "motoconcho"
+      ],
+      "distance_m": 3000,
+      "name": "Av. Bolívar → Av. Abraham Lincoln"
+    },
+    {
+      "id": "e9",
+      "from": "piantini",
+      "to": "mirador",
+      "modes": [
+        "concho",
+        "motoconcho"
+      ],
+      "distance_m": 2600,
+      "name": "Av. Núñez de Cáceres (sur)"
+    }
+  ],
+  "stops": [
+    {
+      "id": "st_colonial_01",
+      "node": "colonial",
+      "name": "Parada Parque Colón"
+    },
+    {
+      "id": "st_gazcue_01",
+      "node": "gazcue",
+      "name": "Parada Independencia"
+    },
+    {
+      "id": "st_vj_01",
+      "node": "villa_juana",
+      "name": "Parada Máximo Gómez"
+    },
+    {
+      "id": "st_ch_27_01",
+      "node": "churchill_27",
+      "name": "Parada Churchill"
+    },
+    {
+      "id": "st_piantini_01",
+      "node": "piantini",
+      "name": "Parada Piantini"
+    },
+    {
+      "id": "st_nunez_01",
+      "node": "nunez",
+      "name": "Parada Núñez"
+    },
+    {
+      "id": "st_lup_27_01",
+      "node": "luperon_27",
+      "name": "Parada Luperón"
+    },
+    {
+      "id": "st_mirador_01",
+      "node": "mirador",
+      "name": "Parada Mirador Sur"
+    }
+  ]
+}
